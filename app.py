@@ -6,10 +6,10 @@ from flask_cors import CORS
 import logging
 import random
 import time
+import chromedriver_autoinstaller
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 
 app = Flask(__name__)
@@ -22,23 +22,14 @@ def random_delay():
     """Introduce a random delay to mimic human behavior."""
     time.sleep(random.uniform(2, 5))
 
-def simulate_realistic_interaction(driver):
-    """Simulate realistic user interactions with error handling."""
-    try:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(random.uniform(1, 3))
-        actions = ActionChains(driver)
-        actions.move_by_offset(random.randint(0, 50), random.randint(0, 50)).perform()
-    except Exception as e:
-        logging.error(f"Error during interaction simulation: {e}")
-
 def restart_browser():
     """Restart the browser to prevent IP blocking issues."""
     try:
+        chromedriver_autoinstaller.install()  # Automatically installs the correct ChromeDriver version
         options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--headless')  # Enable headless mode for deployment
         return webdriver.Chrome(options=options)
     except Exception as e:
         logging.error(f"Error restarting browser: {e}")
@@ -148,12 +139,11 @@ def upload_file():
                     logging.error(f"Error extracting rankings for keyword '{keyword}': {e}")
                     entry["ranking_list"] = []
                     entry["position"] = None
-                    
 
-                    # Print each ranking list and position
-                    print(f"Keyword: {keyword}")
-                    print(f"Ranking List: {entry['ranking_list']}")
-                    print(f"Position: {entry['position']}")
+                # Print each ranking list and position
+                print(f"Keyword: {keyword}")
+                print(f"Ranking List: {entry['ranking_list']}")
+                print(f"Position: {entry['position']}")
 
         finally:
             driver.quit()
