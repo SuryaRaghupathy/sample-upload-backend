@@ -4,6 +4,10 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Enable CORS for communication with React frontend
 
+@app.route('/')
+def home():
+    return "Hello, World!"
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
