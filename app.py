@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -18,8 +19,14 @@ def upload_file():
     if file.filename == '':
         return jsonify({"message": "No selected file"}), 400
 
-    # Save the file to a desired location (optional)
-    file.save(f"./uploads/{file.filename}")
+    # Ensure the uploads directory exists
+    upload_directory = "./uploads"
+    if not os.path.exists(upload_directory):
+        os.makedirs(upload_directory)
+
+    # Save the file
+    file_path = os.path.join(upload_directory, file.filename)
+    file.save(file_path)
 
     return jsonify({"message": "Upload successful!"}), 200
 
