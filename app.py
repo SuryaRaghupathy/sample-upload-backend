@@ -7,30 +7,17 @@ import logging
 import random
 import time
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import NoSuchElementException
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for communication with React frontend
 
+# Set upload size limit to 16 MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
 # Set up logging
 logging.basicConfig(filename="debug.log", level=logging.ERROR, format='%(asctime)s %(levelname)s: %(message)s')
-
-def random_delay():
-    """Introduce a random delay to mimic human behavior."""
-    time.sleep(random.uniform(2, 5))
-
-def simulate_realistic_interaction(driver):
-    """Simulate realistic user interactions with error handling."""
-    try:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(random.uniform(1, 3))
-        actions = ActionChains(driver)
-        actions.move_by_offset(random.randint(0, 50), random.randint(0, 50)).perform()
-    except Exception as e:
-        logging.error(f"Error during interaction simulation: {e}")
 
 def restart_browser():
     """Restart the browser to prevent IP blocking issues."""
@@ -53,6 +40,7 @@ def test_webdriver():
     """Test the Selenium WebDriver functionality."""
     try:
         options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
         driver = webdriver.Chrome(options=options)
         driver.get("https://www.google.co.uk")
         title = driver.title
@@ -72,13 +60,20 @@ def upload_file():
     if file.filename == '':
         return jsonify({"message": "No selected file"}), 400
 
+    if not file.filename.endswith('.csv'):
+        return jsonify({"message": "Only CSV files are allowed"}), 400
+
     # Ensure the uploads directory exists
     upload_directory = "./uploads"
     if not os.path.exists(upload_directory):
-        os.makedirs(upload_directory)
+        try:
+            os.makedirs(upload_directory)
+        except Exception as e:
+            logging.error(f"Failed to create upload directory: {e}")
+            return jsonify({"message": "Failed to create upload directory"}), 500
 
     # Save the uploaded file
-    file_path = os.path.join(upload_directory, file.filename)
+    file_path = os.path.join(upload_directory, secure_filename(file.filename))
     file.save(file_path)
 
     # Read and process the CSV file
