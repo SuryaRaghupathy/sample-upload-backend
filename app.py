@@ -7,13 +7,13 @@ from flask_cors import CORS
 import logging
 import traceback
 import platform
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # Logging setup
 logging.basicConfig(level=logging.DEBUG)
-
 
 def initialize_webdriver():
     try:
@@ -29,20 +29,24 @@ def initialize_webdriver():
             "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
 
-        # Dynamically manage the Chrome binary location for different systems (optional)
+        # Dynamically manage the Chrome binary location for different systems
         def get_chrome_binary_path():
             system_name = platform.system()
             if system_name == "Windows":
-                return r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+                path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
             elif system_name == "Linux":
-                return "/usr/bin/google-chrome"
+                path = "/usr/bin/google-chrome"
             elif system_name == "Darwin":  # macOS
-                return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+                path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
             else:
                 raise Exception(f"Unsupported OS: {system_name}")
 
-        # Optional: Uncomment the next line if needed to set Chrome binary path
-        # chrome_options.binary_location = get_chrome_binary_path()
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Chrome binary not found at: {path}")
+            return path
+
+        # Set Chrome binary path
+        chrome_options.binary_location = get_chrome_binary_path()
 
         # Use WebDriverManager to handle ChromeDriver
         service = Service(ChromeDriverManager().install())
@@ -53,7 +57,6 @@ def initialize_webdriver():
         logging.error(f"Error initializing WebDriver: {e}")
         logging.error(traceback.format_exc())
         raise
-
 
 @app.route('/get-title', methods=['GET'])
 def get_title():
@@ -73,7 +76,6 @@ def get_title():
         logging.error(f"Error in /get-title: {e}")
         logging.error(traceback.format_exc())
         return jsonify({"error": "Failed to fetch title", "details": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
