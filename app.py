@@ -12,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import NoSuchElementException
+import shutil
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for communication with React frontend
@@ -33,21 +34,39 @@ def simulate_realistic_interaction(driver):
     except Exception as e:
         logging.error(f"Error during interaction simulation: {e}")
 
+def get_executable_paths():
+    """Retrieve paths for chromedriver.exe and chrome.exe."""
+    # Check for Chromedriver
+    chromedriver_path = "./chromedriver-win64/chromedriver.exe"
+    if not os.path.exists(chromedriver_path):
+        raise FileNotFoundError(f"Chromedriver not found at {chromedriver_path}. Please verify the path.")
+
+    # Check for Chrome binary
+    chrome_path = shutil.which("chrome") or shutil.which("google-chrome") or "./bundled-chrome/chrome.exe"
+    if not os.path.exists(chrome_path):
+        raise FileNotFoundError(f"Chrome binary not found. Please verify the path.")
+
+    return chromedriver_path, chrome_path
+
 def restart_browser():
     """Restart the browser and return a Selenium WebDriver instance."""
     try:
         logging.info("Initializing WebDriver...")
+        chromedriver_path, chrome_binary_path = get_executable_paths()
+
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')  # Run in headless mode for servers
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
+        options.binary_location = chrome_binary_path  # Set Chrome binary location
 
-        # Specify the relative path to Chromedriver
-        chromedriver_path = "./backend/chromedriver-win64/chromedriver.exe"
-        service = Service(chromedriver_path)
+        service = Service(chromedriver_path)  # Set Chromedriver location
         driver = webdriver.Chrome(service=service, options=options)
         logging.info("WebDriver initialized successfully.")
         return driver
+    except FileNotFoundError as e:
+        logging.error(f"FileNotFoundError: {e}")
+        return None
     except Exception as e:
         logging.error(f"Error restarting browser: {e}")
         return None
