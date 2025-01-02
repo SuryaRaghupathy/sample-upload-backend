@@ -36,7 +36,7 @@ def restart_browser():
     """Restart the browser to prevent IP blocking issues."""
     try:
         options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         return webdriver.Chrome(options=options)
@@ -82,9 +82,16 @@ def upload_file():
             raise ValueError("No valid rows found in the CSV. Ensure 'Keyword', 'Brand', and 'Branch' columns are properly filled.")
 
         # Initialize Selenium WebDriver
-        driver = restart_browser()
-        if not driver:
-            raise RuntimeError("Failed to initialize the Selenium WebDriver.")
+        try:
+            driver = restart_browser()
+            if not driver:
+                raise RuntimeError("Failed to initialize the Selenium WebDriver.")
+        except Exception as e:
+            logging.error(f"Error initializing the Selenium WebDriver: {e}")
+            return jsonify({
+                "message": "Error initializing the Selenium WebDriver",
+                "error": str(e)
+            }), 500
 
         try:
             for idx, entry in enumerate(filtered_data):
@@ -148,12 +155,6 @@ def upload_file():
                     logging.error(f"Error extracting rankings for keyword '{keyword}': {e}")
                     entry["ranking_list"] = []
                     entry["position"] = None
-                    
-
-                    # Print each ranking list and position
-                    print(f"Keyword: {keyword}")
-                    print(f"Ranking List: {entry['ranking_list']}")
-                    print(f"Position: {entry['position']}")
 
         finally:
             driver.quit()
