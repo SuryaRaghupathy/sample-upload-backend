@@ -3,8 +3,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from flask_cors import CORS  # Import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 def initialize_webdriver():
     # Set up Chrome options
@@ -23,7 +25,7 @@ def initialize_webdriver():
 @app.route('/get-title', methods=['GET'])
 def get_title():
     driver = initialize_webdriver()
-    driver.get("https://www.google.com")
+    driver.get("https://www.collinsonhall.co.uk/")
     title = driver.title
     driver.quit()
     return jsonify({"title": title})
