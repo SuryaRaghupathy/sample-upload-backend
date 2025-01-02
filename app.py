@@ -10,6 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import NoSuchElementException
 
 app = Flask(__name__)
@@ -33,13 +34,20 @@ def simulate_realistic_interaction(driver):
         logging.error(f"Error during interaction simulation: {e}")
 
 def restart_browser():
-    """Restart the browser to prevent IP blocking issues."""
+    """Restart the browser and return a Selenium WebDriver instance."""
     try:
+        logging.info("Initializing WebDriver...")
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        options.add_argument('--headless')  # Run in headless mode for servers
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        return webdriver.Chrome(options=options)
+
+        # Specify the relative path to Chromedriver
+        chromedriver_path = "./backend/chromedriver-win64/chromedriver.exe"
+        service = Service(chromedriver_path)
+        driver = webdriver.Chrome(service=service, options=options)
+        logging.info("WebDriver initialized successfully.")
+        return driver
     except Exception as e:
         logging.error(f"Error restarting browser: {e}")
         return None
